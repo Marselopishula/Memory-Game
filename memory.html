@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f8;
+            font-family: Arial, sans-serif;
+        }
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(6, 100px);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .card {
+            width: 100px;
+            height: 100px;
+            background-color: #4a4a4a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: transparent;
+            cursor: pointer;
+            user-select: none;
+            border-radius: 10px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .card:hover {
+            background-color: #626262;
+        }
+        .hidden {
+            background-color: #bbb;
+        }
+        .matched {
+            background-color: #28a745;
+            color: white !important;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #message {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        #pairs-count {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        #menu-button {
+            display: none;
+            margin-top: 20px;
+        }
+        #mode-buttons {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <p id="message"></p>
+    <p id="pairs-count"></p>
+    <div id="mode-buttons">
+        <button onclick="startGame('fruits')">Modo Frutas</button>
+        <button onclick="startGame('animals')">Modo Animales</button>
+        <button onclick="startGame('emojis')">Modo Emojis</button>
+        <button onclick="startGame('flags')">Modo Banderas</button>
+        <button onclick="startGame('signs')">Modo Señales</button>
+    </div>
+    <div class="game-board" id="board"></div>
+    <button id="menu-button" onclick="goToMenu()">Volver al Menú</button>
+    
+    <script>
+        const symbolSets = {
+            fruits: ['🍎', '🍌', '🍒', '🍇', '🍉', '🥝', '🍍', '🥥', '🍓', '🥑', '🍊', '🍈'],
+            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐸'],
+            emojis: ['😀', '😂', '😎', '😍', '😡', '😱', '🤔', '😴', '🥳', '🤩', '😜', '😇'],
+            flags: ['🇺🇸', '🇪🇸', '🇫🇷', '🇩🇪', '🇮🇹', '🇬🇧', '🇨🇦', '🇧🇷', '🇯🇵', '🇨🇳', '🇦🇺', '🇷🇺'],
+            signs: ['🚸', '⚠️', '⛔', '🚷', '🛑', '🚦', '🔞', '🚭', '🅿️', '🚳', '🚔', '⚡']
+        };
+        let firstCard = null;
+        let secondCard = null;
+        let matchedPairs = 0;
+        let totalPairs = 0;
+        let lockBoard = false;
+        const board = document.getElementById('board');
+        const message = document.getElementById('message');
+        const pairsCount = document.getElementById('pairs-count');
+        const menuButton = document.getElementById('menu-button');
+        const modeButtons = document.getElementById('mode-buttons');
+
+        function startGame(mode) {
+            board.innerHTML = '';
+            message.textContent = '';
+            pairsCount.textContent = '';
+            menuButton.style.display = 'none';
+            modeButtons.style.display = 'none';
+            matchedPairs = 0;
+            lockBoard = false;
+            let symbols = symbolSets[mode];
+            let cards = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
+            totalPairs = symbols.length;
+            updatePairsCount();
+            
+            cards.forEach(symbol => {
+                const card = document.createElement('div');
+                card.classList.add('card', 'hidden');
+                card.dataset.symbol = symbol;
+                card.addEventListener('click', () => flipCard(card));
+                board.appendChild(card);
+            });
+        }
+
+        function flipCard(card) {
+            if (lockBoard || card === firstCard || card.classList.contains('matched')) return;
+            
+            card.textContent = card.dataset.symbol;
+            card.style.color = 'black';
+            
+            if (!firstCard) {
+                firstCard = card;
+            } else {
+                secondCard = card;
+                lockBoard = true;
+                setTimeout(checkMatch, 500);
+            }
+        }
+
+        function checkMatch() {
+            if (firstCard.dataset.symbol === secondCard.dataset.symbol) {
+                firstCard.classList.add('matched');
+                secondCard.classList.add('matched');
+                matchedPairs++;
+                updatePairsCount();
+            } else {
+                firstCard.textContent = '';
+                secondCard.textContent = '';
+            }
+            firstCard = null;
+            secondCard = null;
+            lockBoard = false;
+            
+            if (matchedPairs === totalPairs) {
+                message.textContent = '¡Felicidades! Has ganado el juego 🎊';
+                menuButton.style.display = 'block';
+            }
+        }
+
+        function updatePairsCount() {
+            pairsCount.textContent = `Parejas encontradas: ${matchedPairs} / ${totalPairs}`;
+        }
+
+        function goToMenu() {
+            message.textContent = '';
+            pairsCount.textContent = '';
+            menuButton.style.display = 'none';
+            board.innerHTML = '';
+            modeButtons.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
